@@ -238,6 +238,16 @@ class EnemyType(Enum):
     CELEB = "セレブ"
     GYARU_MAMA = "ギャルママ"
     QUEEN = "女王様"
+    JK = "JK"
+    COSPLAYER = "コスプレイヤー"
+    NURSE = "ナース"
+    TEACHER = "女教師"
+    MAID = "メイド"
+    FUJOSHI = "腐女子"
+    YANKEE = "ヤンキー女"
+    MODEL = "読モ"
+    HOSTESS = "キャバ嬢"
+    WITCH = "魔女っ子"
 
 
 class AIType(Enum):
@@ -269,6 +279,16 @@ class Enemy(Entity):
             EnemyType.CELEB: "C",
             EnemyType.GYARU_MAMA: "M",
             EnemyType.QUEEN: "Q",
+            EnemyType.JK: "K",
+            EnemyType.COSPLAYER: "P",
+            EnemyType.NURSE: "N",
+            EnemyType.TEACHER: "T",
+            EnemyType.MAID: "D",
+            EnemyType.FUJOSHI: "F",
+            EnemyType.YANKEE: "Y",
+            EnemyType.MODEL: "R",
+            EnemyType.HOSTESS: "H",
+            EnemyType.WITCH: "W",
         }
         return mapping.get(self.enemy_type, "?")
 
@@ -278,28 +298,65 @@ class Enemy(Entity):
 # ---------------------------------------------------------------------------
 
 ENEMY_TEMPLATES: list[dict] = [
-    # Floor 1-3
+    # === Floor 1-3: 序盤 ===
+    dict(name="JK", hp=8, atk=2, defense=1, speed=1.0,
+         enemy_type=EnemyType.JK, ai_type=AIType.WANDER, exp_reward=3,
+         floor_min=1, floor_max=3),
     dict(name="ギャル", hp=12, atk=3, defense=1, speed=1.0,
          enemy_type=EnemyType.GAL, ai_type=AIType.WANDER, exp_reward=5,
          floor_min=1, floor_max=5),
+    dict(name="腐女子", hp=10, atk=4, defense=0, speed=1.0,
+         enemy_type=EnemyType.FUJOSHI, ai_type=AIType.FLEE, exp_reward=6,
+         floor_min=1, floor_max=4),
+
+    # === Floor 2-5: 序盤〜中盤 ===
     dict(name="地雷系女子", hp=15, atk=5, defense=2, speed=1.0,
          enemy_type=EnemyType.JIRAI, ai_type=AIType.CHASE, exp_reward=8,
          floor_min=2, floor_max=7),
-    # Floor 3-6
+    dict(name="コスプレイヤー", hp=14, atk=4, defense=2, speed=1.0,
+         enemy_type=EnemyType.COSPLAYER, ai_type=AIType.WANDER, exp_reward=7,
+         floor_min=2, floor_max=6),
+    dict(name="メイド", hp=11, atk=3, defense=3, speed=1.0,
+         enemy_type=EnemyType.MAID, ai_type=AIType.WANDER, exp_reward=6,
+         floor_min=2, floor_max=5),
+
+    # === Floor 3-7: 中盤 ===
     dict(name="OL", hp=20, atk=6, defense=3, speed=1.0,
          enemy_type=EnemyType.OL, ai_type=AIType.WANDER, exp_reward=12,
          floor_min=3, floor_max=8),
-    dict(name="地下アイドル", hp=10, atk=4, defense=1, speed=2.0,
+    dict(name="ナース", hp=18, atk=5, defense=2, speed=1.0,
+         enemy_type=EnemyType.NURSE, ai_type=AIType.WANDER, exp_reward=10,
+         floor_min=3, floor_max=7),
+    dict(name="地下アイドル", hp=10, atk=4, defense=1, speed=0.5,
          enemy_type=EnemyType.IDOL, ai_type=AIType.FLEE, exp_reward=15,
          floor_min=4, floor_max=9),
-    # Floor 5-10
-    dict(name="セレブ", hp=30, atk=8, defense=5, speed=0.5,
-         enemy_type=EnemyType.CELEB, ai_type=AIType.WANDER, exp_reward=20,
-         floor_min=5, floor_max=12),
+
+    # === Floor 5-10: 中盤〜後半 ===
+    dict(name="女教師", hp=25, atk=7, defense=4, speed=1.0,
+         enemy_type=EnemyType.TEACHER, ai_type=AIType.CHASE, exp_reward=16,
+         floor_min=5, floor_max=10),
+    dict(name="ヤンキー女", hp=22, atk=9, defense=2, speed=1.0,
+         enemy_type=EnemyType.YANKEE, ai_type=AIType.CHASE, exp_reward=18,
+         floor_min=5, floor_max=10),
+    dict(name="読モ", hp=16, atk=5, defense=3, speed=1.0,
+         enemy_type=EnemyType.MODEL, ai_type=AIType.FLEE, exp_reward=14,
+         floor_min=5, floor_max=9),
+    dict(name="セレブ", hp=30, atk=8, defense=5, speed=2.0,
+         enemy_type=EnemyType.CELEB, ai_type=AIType.CHASE, exp_reward=22,
+         floor_min=6, floor_max=12),
+
+    # === Floor 7-12: 後半 ===
     dict(name="ギャルママ", hp=35, atk=10, defense=4, speed=1.0,
          enemy_type=EnemyType.GYARU_MAMA, ai_type=AIType.CHASE, exp_reward=25,
          floor_min=7, floor_max=15),
-    # Floor 10+
+    dict(name="キャバ嬢", hp=28, atk=11, defense=3, speed=1.0,
+         enemy_type=EnemyType.HOSTESS, ai_type=AIType.WANDER, exp_reward=24,
+         floor_min=7, floor_max=13),
+    dict(name="魔女っ子", hp=20, atk=12, defense=2, speed=1.0,
+         enemy_type=EnemyType.WITCH, ai_type=AIType.SPECIAL, exp_reward=28,
+         floor_min=8, floor_max=14),
+
+    # === Floor 10+: 最終盤 ===
     dict(name="女王様", hp=50, atk=14, defense=7, speed=1.0,
          enemy_type=EnemyType.QUEEN, ai_type=AIType.SPECIAL, exp_reward=40,
          floor_min=10, floor_max=99),

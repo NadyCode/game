@@ -10,57 +10,155 @@ Usage:
 
 from __future__ import annotations
 
-import curses
+import os
 import sys
 import locale
 
 from game import Game
-from ui import init_colors, render
 
 
-def main(stdscr):
-    """Main game loop running inside curses."""
-    # Curses setup
-    curses.curs_set(0)      # Hide cursor
-    stdscr.nodelay(False)   # Blocking input
-    stdscr.timeout(-1)
-    init_colors()
+def _can_use_curses() -> bool:
+    """Check whether curses can initialize in this environment."""
+    term = os.environ.get("TERM", "")
+    if not term or term == "dumb":
+        return False
+    try:
+        import curses
+        curses.setupterm()
+        return True
+    except Exception:
+        return False
+
+
+# =========================================================================
+# Curses mode
+# =========================================================================
+
+def run_curses():
+    """Run using curses (full terminal UI)."""
+    import curses
+    from ui import init_colors, render
+
+    def main(stdscr):
+        curses.curs_set(0)
+        stdscr.nodelay(False)
+        stdscr.timeout(-1)
+        init_colors()
+
+        game = Game()
+        running = True
+        while running:
+            render(stdscr, game)
+            try:
+                ch = stdscr.get_wch()
+            except curses.error:
+                continue
+
+            if isinstance(ch, int):
+                key_map = {
+                    curses.KEY_LEFT: "KEY_LEFT",
+                    curses.KEY_RIGHT: "KEY_RIGHT",
+                    curses.KEY_UP: "KEY_UP",
+                    curses.KEY_DOWN: "KEY_DOWN",
+                    curses.KEY_ENTER: "\n",
+                    10: "\n",
+                    13: "\n",
+                }
+                key = key_map.get(ch, str(ch))
+            else:
+                key = ch
+
+            running = game.process_input(key)
+
+    curses.wrapper(main)
+
+
+# =========================================================================
+# Text fallback mode (no curses required)
+# =========================================================================
+
+def _setup_raw_input():
+    """Set terminal to raw mode for single-char reads, if possible."""
+    try:
+        import tty
+        import termios
+        fd = sys.stdin.fileno()
+        old_settings = termios.tcgetattr(fd)
+        tty.setcbreak(fd)
+        return old_settings, fd
+    except Exception:
+        return None, None
+
+
+def _restore_input(old_settings, fd):
+    """Restore original terminal settings."""
+    if old_settings is not None:
+        try:
+            import termios
+            termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+        except Exception:
+            pass
+
+
+def _read_key(raw_mode: bool) -> str:
+    """Read a single key from stdin."""
+    if raw_mode:
+        ch = sys.stdin.read(1)
+        if ch == "\x1b":
+            # Escape sequence — try to read arrow keys
+            seq = sys.stdin.read(2) if True else ""
+            arrow_map = {
+                "[A": "k", "[B": "j", "[C": "l", "[D": "h",
+            }
+            return arrow_map.get(seq, "\x1b")
+        if ch == "\r" or ch == "\n":
+            return "\n"
+        return ch
+    else:
+        line = input("> ").strip()
+        if not line:
+            return "\n"
+        return line[0]
+
+
+def run_text():
+    """Run using plain text output + single-key input."""
+    from ui_text import text_render, clear_screen
 
     game = Game()
+    old_settings, fd = _setup_raw_input()
+    raw_mode = old_settings is not None
 
-    running = True
-    while running:
-        # Render current state
-        render(stdscr, game)
+    try:
+        running = True
+        while running:
+            clear_screen()
+            print(text_render(game))
 
-        # Get input
-        try:
-            ch = stdscr.get_wch()
-        except curses.error:
-            continue
+            if not raw_mode:
+                print()
+                print("コマンド (h/j/k/l/y/u/b/n/g/i/s/>/./q):")
 
-        # Convert special keys
-        if isinstance(ch, int):
-            key_map = {
-                curses.KEY_LEFT: "KEY_LEFT",
-                curses.KEY_RIGHT: "KEY_RIGHT",
-                curses.KEY_UP: "KEY_UP",
-                curses.KEY_DOWN: "KEY_DOWN",
-                curses.KEY_ENTER: "\n",
-                10: "\n",
-                13: "\n",
-            }
-            key = key_map.get(ch, str(ch))
-        else:
-            key = ch
+            key = _read_key(raw_mode)
+            running = game.process_input(key)
+    except (KeyboardInterrupt, EOFError):
+        pass
+    finally:
+        _restore_input(old_settings, fd)
 
-        running = game.process_input(key)
 
+# =========================================================================
+# Entry point
+# =========================================================================
 
 if __name__ == "__main__":
     locale.setlocale(locale.LC_ALL, "")
+
     try:
-        curses.wrapper(main)
+        if _can_use_curses():
+            run_curses()
+        else:
+            run_text()
     except KeyboardInterrupt:
         pass
     finally:
