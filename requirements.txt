@@ -1,0 +1,3 @@
+# Dungeon Nanpa Chronicle - Dependencies
+# curses is part of Python stdlib on Linux/macOS
+# No external dependencies required
