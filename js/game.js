@@ -126,10 +126,8 @@ class Game {
   _endTurn() {
     this.player.turnCount++;
 
-    // MP drain
-    let drain = 1;
-    if (this.player.hasAbility('飯') && this.player.turnCount % 2 === 0) drain = 0;
-    this.messages.push(...this.player.consumeMP(drain));
+    // MP drain (1 per 10 turns; LP drain when MP=0)
+    this.messages.push(...this.player.consumeMP());
 
     // Regen ability
     if (this.player.hasAbility('回')) {

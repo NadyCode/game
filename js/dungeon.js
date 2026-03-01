@@ -75,6 +75,36 @@ class DungeonMap {
     for (let ry = room.y; ry < room.y + room.h; ry++)
       for (let rx = room.x; rx < room.x + room.w; rx++)
         this.explored.add(ry * this.w + rx);
+    // Reveal corridor entrances: scan 1 tile outside each room edge
+    // Top and bottom edges
+    for (let rx = room.x; rx < room.x + room.w; rx++) {
+      this._revealCorridor(rx, room.y - 1);
+      this._revealCorridor(rx, room.y + room.h);
+    }
+    // Left and right edges
+    for (let ry = room.y; ry < room.y + room.h; ry++) {
+      this._revealCorridor(room.x - 1, ry);
+      this._revealCorridor(room.x + room.w, ry);
+    }
+  }
+
+  _revealCorridor(x, y) {
+    // Reveal a corridor tile and continue following straight corridors
+    if (!this.inBounds(x, y)) return;
+    if (this.tiles[y][x] === TILE.WALL) return;
+    this.explored.add(y * this.w + x);
+    // Follow the corridor a few tiles so the entrance is clearly visible
+    for (let depth = 1; depth <= 3; depth++) {
+      // Try all 4 cardinal directions from the original exit
+      for (const [dx, dy] of [[0,-1],[0,1],[-1,0],[1,0]]) {
+        let cx = x + dx * depth, cy = y + dy * depth;
+        if (!this.inBounds(cx, cy)) continue;
+        if (this.tiles[cy][cx] === TILE.WALL) continue;
+        // Only follow if it's still a corridor (not inside a room)
+        if (this.roomAt(cx, cy)) continue;
+        this.explored.add(cy * this.w + cx);
+      }
+    }
   }
 
   revealAround(x, y, radius = 1) {

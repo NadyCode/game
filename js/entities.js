@@ -90,16 +90,23 @@ class Player {
     return msgs;
   }
 
-  consumeMP(amount) {
+  consumeMP() {
     const msgs = [];
-    this.mp -= amount;
+    // MP is drained 1 per 10 turns
+    if (this.turnCount % 10 === 0) {
+      let drain = 1;
+      if (this.hasAbility('飯')) drain = 0; // 飯 seal negates drain
+      this.mp -= drain;
+      if (this.mp < 0) this.mp = 0;
+      if (drain > 0 && this.mp <= 20 && this.mp > 0) {
+        msgs.push('モテオーラが薄れてきた…');
+      }
+    }
+    // When MP=0, lose 1 LP every turn
     if (this.mp <= 0) {
-      this.mp = 0;
       this.hp -= 1;
-      msgs.push('空腹でLPが減っている…！');
+      msgs.push('モテポイント切れでLPが減っている…！');
       if (this.hp <= 0) { this.hp = 0; this.alive = false; msgs.push('力尽きた…'); }
-    } else if (this.mp <= 20) {
-      msgs.push('おなかが減ってきた…');
     }
     return msgs;
   }
